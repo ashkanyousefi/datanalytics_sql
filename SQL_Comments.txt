@@ -5,3 +5,15 @@ join InvoiceLine on Track.TrackId=InvoiceLine.TrackId
 join Invoice on InvoiceLine.InvoiceId=Invoice.InvoiceId
 GROUP by Artist.Name
 order by Amount_Spent DESC
+
+---------------------------------------------------------------------------------------------------------------
+select Artist.Name,Customer.FirstName,Customer.LastName, sum(invoiceline.quantity*invoiceline.unitprice) as Amount_Spent from Artist
+join Album on Artist.ArtistId=Album.ArtistId
+join Track on Album.AlbumId=Track.AlbumId
+join InvoiceLine on Track.TrackId=InvoiceLine.TrackId
+join Invoice on InvoiceLine.InvoiceId=Invoice.InvoiceId
+join Customer on customer.CustomerId=Invoice.CustomerId
+where artist.Name='Iron Maiden'
+group by Customer.CustomerId
+order by Amount_Spent DESC
+
