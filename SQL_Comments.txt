@@ -17,3 +17,44 @@ where artist.Name='Iron Maiden'
 group by Customer.CustomerId
 order by Amount_Spent DESC
 
+------------------------------------------------------------------------------------------------------------------
+
+select Invoice.BillingCountry
+,Genre.Name
+,count(*)
+from InvoiceLine 
+join Invoice on Invoice.InvoiceId=InvoiceLine.InvoiceId
+join Customer on Customer.CustomerId=Invoice.CustomerId
+join track on track.TrackId=InvoiceLine.TrackId
+join Genre on genre.GenreId=Track.GenreId
+group by Invoice.BillingCountry,Genre.GenreId
+
+-----------------------------------------------------------------------------------------------------------------
+select Max_Count,BillingCountry,Name,GenreID from (
+select *
+, max(Total_Count) over (partition by BillingCountry) as Max_Count
+
+from 
+(select Invoice.BillingCountry
+,Genre.Name
+,count(*) as Total_Count
+,Genre.GenreId
+from InvoiceLine 
+join Invoice on Invoice.InvoiceId=InvoiceLine.InvoiceId
+join Customer on Customer.CustomerId=Invoice.CustomerId
+join track on track.TrackId=InvoiceLine.TrackId
+join Genre on genre.GenreId=Track.GenreId
+group by Invoice.BillingCountry,Genre.GenreId) as t1 ) as T2
+
+where Max_Count=Total_Count
+
+-----------------------------------------------------------------------------------------------------------------
+select track.name,Milliseconds from Track
+where Milliseconds >(
+select avg(Track.Milliseconds) 
+FROM Track) 
+order by track.Milliseconds DESC
+
+
+------------------------------------------------------------------------------------------------------------------
+
