@@ -1,0 +1,128 @@
+SELECT 
+Artist.Name
+,sum(invoiceline.quantity*invoiceline.unitprice) AS Amount_Spent 
+from Artist
+
+---------------------------------------------------------------------
+
+SELECT 
+Artist.Name
+,sum(invoiceline.quantity*invoiceline.unitprice) AS Amount_Spent 
+FROM Artist
+JOIN Album ON Artist.ArtistId=Album.ArtistId
+JOIN Track ON Album.AlbumId=Track.AlbumId
+JOIN InvoiceLine ON Track.TrackId=InvoiceLine.TrackId
+JOIN Invoice ON InvoiceLine.InvoiceId=Invoice.InvoiceId
+GROUP BY Artist.Name
+ORDER BY Amount_Spent DESC
+
+--------------------------------------------------------------------
+
+SELECT Artist.Name,Customer.FirstName,Customer.LAStName, sum(invoiceline.quantity*invoiceline.unitprice) AS Amount_Spent from Artist
+JOIN Album on Artist.ArtistId=Album.ArtistId
+JOIN Track on Album.AlbumId=Track.AlbumId
+JOIN InvoiceLine on Track.TrackId=InvoiceLine.TrackId
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+SELECT 
+	A.Name
+	,C.FirstName
+	,C.LAStName
+	,sum(IL.quantity*IL.unitprice) AS Amount_Spent 
+from Artist A
+JOIN Album AL on A.ArtistId=AL.ArtistId
+JOIN Track T on AL.AlbumId=T.AlbumId
+JOIN InvoiceLine IL on T.TrackId=IL.TrackId
+JOIN Invoice I on IL.InvoiceId=I.InvoiceId
+JOIN Customer C on C.CustomerId=I.CustomerId
+WHERE A.Name='Iron Maiden'
+GROUP BY C.CustomerId
+ORDER BY Amount_Spent DESC
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+SELECT 
+	Invoice.BillingCountry
+	,Genre.Name
+	,count(*)
+from InvoiceLine 
+JOIN Invoice on Invoice.InvoiceId=InvoiceLine.InvoiceId
+JOIN Customer on Customer.CustomerId=Invoice.CustomerId
+JOIN track on track.TrackId=InvoiceLine.TrackId
+JOIN Genre on genre.GenreId=Track.GenreId
+GROUP BY Invoice.BillingCountry,Genre.GenreId
+ORDER BY 1,3 DESC
+
+----------------------------------------------------------------------------------------------------------------------
+with popular_genre AS
+(SELECT 
+	Invoice.BillingCountry
+	,Genre.Name
+	,count(*) AS Total_Count
+	,Genre.GenreId
+from InvoiceLine 
+JOIN Invoice on Invoice.InvoiceId = InvoiceLine.InvoiceId
+JOIN Customer on Customer.CustomerId = Invoice.CustomerId
+JOIN track on track.TrackId = InvoiceLine.TrackId
+JOIN Genre on genre.GenreId = Track.GenreId
+GROUP BY Invoice.BillingCountry,Genre.GenreId) 
+, country_genre_max AS
+(SELECT  BillingCountry, max (Total_Count) AS Total_Count_Max FROM 
+(SELECT 
+	Invoice.BillingCountry
+	,count(*) AS Total_Count
+from InvoiceLine 
+JOIN Invoice on Invoice.InvoiceId = InvoiceLine.InvoiceId
+JOIN Customer on Customer.CustomerId = Invoice.CustomerId
+JOIN track on track.TrackId = InvoiceLine.TrackId
+JOIN Genre on genre.GenreId = Track.GenreId
+GROUP BY Invoice.BillingCountry,Genre.GenreId) AS t
+GROUP BY BillingCountry) 
+SELECT
+	 popular_genre.BillingCountry
+	 ,popular_genre.name
+	 ,popular_genre.total_count
+	 ,GenreId
+from popular_genre
+JOIN country_genre_max on popular_genre.BillingCountry=country_genre_max.BillingCountry
+WHERE  Total_Count=Total_Count_Max
+ORDER BY popular_genre.BillingCountry
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+SELECT track.name,Milliseconds from Track
+WHERE Milliseconds >(
+SELECT avg(Track.Milliseconds) 
+FROM Track) 
+ORDER BY track.Milliseconds DESC
+
+--------------------------------------------------------------------------------------------------------------------
+
+with
+ custumer_total AS (SELECT  
+customer.FirstName
+, Customer.LAStName
+, Invoice.BillingCountry
+, Invoice.CustomerId
+, sum(Total) AS total_customer from Invoice
+JOIN customer on Invoice.CustomerId = Customer.CustomerId
+GROUP BY Invoice.CustomerId)
+,
+custumer_max AS (SELECT max(total_customer)AS top_custumer , BillingCountry from
+(SELECT  
+customer.FirstName
+, Customer.LAStName
+, Invoice.BillingCountry
+, Invoice.CustomerId
+, sum(Total) AS total_customer from Invoice
+JOIN customer on Invoice.CustomerId = Customer.CustomerId
+GROUP BY Invoice.CustomerId) AS cutomer_max
+GROUP BY BillingCountry)
+
+SELECT custumer_total.BillingCountry,total_customer,custumer_total.FirstName,custumer_total.LAStName,custumer_total.CustomerId
+from custumer_total
+JOIN custumer_max on custumer_max.BillingCountry=custumer_total.BillingCountry 
+WHERE total_customer = top_custumer
+ORDER BY custumer_total.BillingCountry ASC
